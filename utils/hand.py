@@ -101,11 +101,10 @@ class Hand:
                 case _:
                     pass
 
-
-
-            
-
     def can_nope(self):
         return self.cards[CardEnum.NOPE] > 0
+
+    def can_defuse(self):
+        return self.cards[CardEnum.DEFUSE] > 0
             
 
