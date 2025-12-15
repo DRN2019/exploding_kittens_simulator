@@ -2,14 +2,11 @@ from .card import CardEnum
 import random
 
 class Deck:
-    def __init__(self, n_players):
-        defuse_ct = 1 if n_players == 5 else 2
-
+    def __init__(self, seed=123):
         # Construct deck by count of cards
-        self.n_players = n_players
         self.deck = {
-            CardEnum.DEFUSE: defuse_ct,
-            CardEnum.EXPLODING_KITTEN: n_players - 1,
+            CardEnum.DEFUSE: 0,
+            CardEnum.EXPLODING_KITTEN: 0,
             CardEnum.NOPE: 5,
             CardEnum.ATTACK: 4,
             CardEnum.FAVOR: 4,
@@ -32,8 +29,21 @@ class Deck:
         for card, count in self.deck.items():
             deck_list.extend([card] * count)
 
-        random.shuffle(deck_list)
+        self.shuffle()
+
         return deck_list
+    
+    def add_defuse_and_kittens(self, n_players):
+        defuseCt = 1 if n_players == 5 else 2
+        expKittenCt = n_players - 1
+
+        for i in range(defuseCt):
+            self.insert_card(CardEnum.DEFUSE)
+        
+        for i in range(expKittenCt):
+            self.insert_card(CardEnum.EXPLODING_KITTEN)
+
+        self.shuffle()
 
     def shuffle(self):
         random.shuffle(self.draw_pile)
@@ -45,6 +55,8 @@ class Deck:
         card = self.draw_pile.pop(0)
         self.deck[card] -= 1
 
+        return card
+
     def see_top_3(self):
         return self.draw_pile[:3]
 
@@ -52,6 +64,8 @@ class Deck:
         self.deck[card] += 1
         self.draw_pile.insert(index, card)
 
+    def get_deck_size(self):
+        return len(self.draw_pile)
         
 
     
