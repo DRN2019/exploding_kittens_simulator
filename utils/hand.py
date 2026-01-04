@@ -1,17 +1,18 @@
-from .card import CardEnum
-from .actions import ActionEnum
+from .card import CardEnum, card_names
+from .actions import ActionEnum, action_names, card_action_mapping
 from .error import InsufficientCardsError
 
 class Hand:
 
-    def __init__(self, cards):
+    def __init__(self, cards = {}, alive = True):
         """
         Args:
             cards (dict): Dictionary of initial cards
         """
-        self.cards = cards
+        self.cards: dict[CardEnum, int] = cards
+        self.alive: bool = alive
 
-    def get_cards(self):
+    def get_cards(self) -> dict[CardEnum, int]:
         """
 
         Returns:
@@ -22,54 +23,25 @@ class Hand:
     def get_cards_str(self):
         """
         Returns player's cards in a user-friendly string
+
         Returns:
             dict: Dictionary of cards in hand
         """
-        cards = ""
-        for cardType, quantity in self.cards:
+        cards_str = ""
+        for cardType, quantity in self.cards.items():
+            cards_str += f"{card_names[cardType]}: {quantity}\n"
 
-            match cardType:
-                case CardEnum.DEFUSE:
-                    cards += f"Defuse: {quantity}"
-               
-                case CardEnum.NOPE:
-                    cards += f"Nope: {quantity}"
+        return cards_str
+    
+    def get_n_cards(self) -> int:
+        """
+        Returns number of cards left in player's hand
 
-                case CardEnum.ATTACK:
-                    cards += f"Attack: {quantity}"
+        Returns:
+            int: Number of cards in hand
+        """
 
-                case CardEnum.FAVOR:
-                    cards += f"Favor: {quantity}"
-
-                case CardEnum.SHUFFLE:
-                    cards += f"Shuffle: {quantity}"
-
-                case CardEnum.SKIP:
-                    cards += f"Skip: {quantity}"
-
-                case CardEnum.SEE_THE_FUTURE:
-                    cards += f"See the Future: {quantity}"
-
-                case CardEnum.BEARD:
-                    cards += f"Beard Cat: {quantity}"
-
-                case CardEnum.CATERMELON:
-                    cards += f"Catermelon: {quantity}"
-
-                case CardEnum.POTATO:                    
-                    cards += f"Hairy Potato Cat: {quantity}"
-
-                case CardEnum.RAINBOW:                    
-                    cards += f"Rainbow Ralphing Cat: {quantity}"
-
-                case CardEnum.TACO:                    
-                    cards += f"Tacocat: {quantity}"
-
-                case _:
-                    pass
-
-            string += "\n"
-
+        return sum(self.cards.values())
 
 
     def add_card(self, card: CardEnum, quantity: int = 1):
@@ -106,9 +78,33 @@ class Hand:
         self.cards[card] -= quantity
 
         return None
+    
+    def is_alive(self):
+        """
+        Checks if player is still alive
+
+        Returns:
+            bool: True if player is still alive, False otherwise
+        """
+        return self.alive
+    
+    def set_alive(self, alive: bool):
+        """
+        Sets the player's alive state
+
+        Args:
+            alive (bool): True if player is alive, False otherwise
+        """
+        self.alive = alive
 
 
-    def get_possible_actions(self):
+    def get_possible_actions(self) -> dict[ActionEnum, int]:
+        """
+        Gets the list of possible actions the player can play and the number of times they can play that action
+
+        Returns:
+            dict[ActionEnum, int]: Dictionary with <Action, count> pairs
+        """
         possible_actions = {}
 
         for cardType in CardEnum:
@@ -116,52 +112,10 @@ class Hand:
             count = self.cards[cardType]
 
             match cardType:
-                case CardEnum.DEFUSE:
-                    possible_actions[ActionEnum.DEFUSE] = count
-               
-                case CardEnum.NOPE:
-                    possible_actions[ActionEnum.NOPE] = count
+                case CardEnum.DEFUSE | CardEnum.NOPE | CardEnum.ATTACK | CardEnum.FAVOR | CardEnum.SHUFFLE | CardEnum.SKIP | CardEnum.SEE_THE_FUTURE:
+                    possible_actions[card_action_mapping[cardType]] = count
 
-                case CardEnum.ATTACK:
-                    possible_actions[ActionEnum.ATTACK] = count
-
-                case CardEnum.FAVOR:
-                    possible_actions[ActionEnum.FAVOR] = count
-
-                case CardEnum.SHUFFLE:
-                    possible_actions[ActionEnum.SHUFFLE] = count
-
-                case CardEnum.SKIP:
-                    possible_actions[ActionEnum.SKIP] = count
-
-                case CardEnum.SEE_THE_FUTURE:
-                    possible_actions[ActionEnum.SEE_THE_FUTURE] = count
-
-                case CardEnum.BEARD:
-                    if possible_actions[ActionEnum.TWO_CAT]:
-                        possible_actions[ActionEnum.TWO_CAT] += count // 2
-                    else:
-                        possible_actions[ActionEnum.TWO_CAT] = count // 2
-
-                case CardEnum.CATERMELON:
-                    if possible_actions[ActionEnum.TWO_CAT]:
-                        possible_actions[ActionEnum.TWO_CAT] += count // 2
-                    else:
-                        possible_actions[ActionEnum.TWO_CAT] = count // 2
-
-                case CardEnum.POTATO:                    
-                    if possible_actions[ActionEnum.TWO_CAT]:
-                        possible_actions[ActionEnum.TWO_CAT] += count // 2
-                    else:
-                        possible_actions[ActionEnum.TWO_CAT] = count // 2
-
-                case CardEnum.RAINBOW:                    
-                    if possible_actions[ActionEnum.TWO_CAT]:
-                        possible_actions[ActionEnum.TWO_CAT] += count // 2
-                    else:
-                        possible_actions[ActionEnum.TWO_CAT] = count // 2
-
-                case CardEnum.TACO:                    
+                case CardEnum.BEARD | CardEnum.CATERMELON | CardEnum.POTATO | CardEnum.RAINBOW | CardEnum.TACO:
                     if possible_actions[ActionEnum.TWO_CAT]:
                         possible_actions[ActionEnum.TWO_CAT] += count // 2
                     else:
@@ -169,11 +123,74 @@ class Hand:
 
                 case _:
                     pass
+        
+        return possible_actions
 
-    def can_nope(self):
+    def get_possible_actions_str(self) -> str:
+        """
+        Returns the a stringified list of possible actions the player can perform
+
+        Returns:
+            str: String of all available actions player has
+        """
+        actions = self.get_possible_actions()
+        
+        action_str = ""
+
+        for actionType, count in actions.items():
+            action_str += f"{action_names[actionType]}: {count}\n"
+
+        return action_str
+
+    def play_action(self, action: ActionEnum) -> None:
+        """
+        Removes the corresponding cards from a player's hand after playing an action
+
+        Args:
+            action (ActionEnum): Action to be performed
+
+        Raises:
+            ValueError: Raised if insufficient cards to perform action
+        """
+
+        # Sanity check for valid action
+        if not self.get_possible_actions()[action]:
+            raise ValueError("Invalid action number!")
+        
+        # Check if player steals a card, only case where multiple cards are removed from hand from 1 action
+        if action == ActionEnum.TWO_CAT:
+            cat_cards = [CardEnum.BEARD, CardEnum.CATERMELON, CardEnum.POTATO, CardEnum.RAINBOW, CardEnum.TACO]
+
+            # Simply use the first pair of cat cards found
+            for card in cat_cards:
+                if self.cards[card] >= 2:
+                    self.cards[card] -= 2
+                    return
+
+        else:
+            # Find the corresponding card type to the action
+            for cardType, actionType in card_action_mapping.items():
+                if action == actionType:
+                    self.cards[cardType] -= 1
+                    return
+
+
+    def can_nope(self) -> bool:
+        """
+        Checks if the player can nope
+
+        Returns:
+            bool: True if player has at least one Nope card, False otherwise
+        """
         return self.cards[CardEnum.NOPE] > 0
 
-    def can_defuse(self):
+    def can_defuse(self) -> bool:
+        """
+        Checks if the player can defuse
+
+        Returns:
+            bool: True if player has at least one Defuse card, False otherwise
+        """
         return self.cards[CardEnum.DEFUSE] > 0
             
 

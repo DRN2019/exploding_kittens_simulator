@@ -1,5 +1,6 @@
 from .card import CardEnum
 import random
+from typing import List
 
 class Deck:
     def __init__(self, seed=123):
@@ -23,7 +24,7 @@ class Deck:
         self.draw_pile = self.build_deck()
 
 
-    def build_deck(self):
+    def build_deck(self) -> List[CardEnum]:
         # Turn dictionary into a list of cards for ordering
         deck_list = []
         for card, count in self.deck.items():
@@ -48,16 +49,13 @@ class Deck:
     def shuffle(self):
         random.shuffle(self.draw_pile)
 
-    def draw_card(self):
-        if len(self.draw_pile) == 0:
-            return None
-
+    def draw_card(self) -> CardEnum:
         card = self.draw_pile.pop(0)
         self.deck[card] -= 1
 
         return card
 
-    def see_top_3(self):
+    def see_top_3(self) -> List[CardEnum]:
         return self.draw_pile[:3]
 
     def insert_card(self, card: CardEnum, index: int = 0):

@@ -2,11 +2,9 @@ import random
 from .utils.deck import Deck
 from .utils.hand import Hand
 from .utils.card import CardEnum
-from .utils.actions import ActionEnum
-from .utils.cli_util import clear_screen
+from .utils.actions import ActionEnum, print_all_user_actions, perform_action
+from .utils.util import clear_screen
 from typing import List
-
-
 
 
 def main():
@@ -64,14 +62,79 @@ def main():
 
     # Turn based gameplay
     curPlayer = 0
+    isAttacked = False
     while aliveCt > 1:
         # Check if current player is still in the game
-        if players[curPlayer] is None:
+        if not players[curPlayer].is_alive():
             curPlayer = (curPlayer + 1) % n_players
             continue
 
         print(f"Player {curPlayer + 1}'s turn:")
 
+        skipTurn = False
+        while True:
+            action = input("""What would you like to do?
+                           1. See your hand
+                           2. Play a card
+                           3. End turn
+                           """).strip()
+            
+
+            match action:
+                case "1":
+                    print(players[curPlayer].get_cards_str())
+
+                case "2":
+                    print("Here are your available actions:")
+                    print(players[curPlayer].get_possible_actions_str())
+                    print("Which action would you like to do?")
+                    print("0. Exit")
+                    print_all_user_actions()
+
+                    # Loop through user selecting an action until action is completed
+                    while True:
+                        action_choice = input("Please enter the action number: ").strip()
+
+                        if action_choice == "0":
+                            break
+
+                        try:
+                            action_enum = ActionEnum(int(action_choice))
+
+                            # Perform action if available
+                            if players[curPlayer].get_possible_actions()[action_enum]:
+                                players[curPlayer].play_action(action_enum)
+                                perform_action(action_enum, players, curPlayer, skipTurn, isAttacked, deck)
+
+                                # Check if action ends turn
+                                if skipTurn:
+                                    break
+                                
+                            else:
+                                raise ValueError("If statement")
+
+                        except Exception as e:
+                            print("Please enter a valid action number!")
+                            print(f"Error: {e}")
+                            continue
+
+                case "3":
+                    break
+
+                case _:
+                    print("Please input a valid action")
+                    continue
+
+            break
+
+        # Check if user played a card that skipped their turn
+        if skipTurn:
+            if isAttacked:
+                isAttacked = False
+                continue
+            curPlayer = (curPlayer + 1) % n_players
+            continue
+        
         # Draw a card
         print("Drawing top card...")
         top_card = deck.draw_card()
@@ -88,20 +151,32 @@ def main():
                 # Place defused exploding kitten
                 pos = int(input(f"Place Exploding Kitten (1 = top, {deck.get_deck_size()+1} = bottom): "))
                 while pos < 1 and pos > (deck.get_deck_size() + 1):
-                    pos = int(input(f"Invalid input. Please try again (1 = top, {deck.get_deck_size()+1} = bottom): "))
+                    pos = int(input(f"Invalid input. Please try again (1 = top, {deck.get_deck_size() + 1} = bottom): "))
+                    deck.insert_card(CardEnum.EXPLODING_KITTEN, pos)
 
-                
+                # Go to the next player
+                if isAttacked:
+                    isAttacked = False
+                    continue
+                curPlayer = (curPlayer + 1) % n_players
+                continue
 
+            # If player can't defuse, take player out and go to the next player
+            else:
+                players[curPlayer].set_alive(False)
+                aliveCt -= 1
+                curPlayer = (curPlayer + 1) % n_players
+                continue
 
-                # Go to next player
+        
+        # If regular card drawn, add to player deck
+        players[curPlayer].add_card(top_card)
 
-
-
-
-
-        # Loop through available user actions
-
-        # Move to next player
+        # Move to next player if not attacked
+        if isAttacked:
+            isAttacked = False
+            continue
         curPlayer = (curPlayer + 1) % n_players
 
-    
+
+main()

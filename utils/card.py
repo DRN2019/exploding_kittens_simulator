@@ -15,3 +15,19 @@ class CardEnum(Enum):
     RAINBOW = 12            # 4 cards
     TACO = 13               # 4 cards
 
+
+card_names = {
+    CardEnum.EXPLODING_KITTEN: "Exploding Kitten",
+    CardEnum.DEFUSE: "Defuse",
+    CardEnum.NOPE: "Nope",
+    CardEnum.ATTACK: "Attack",
+    CardEnum.FAVOR: "Favor",
+    CardEnum.SHUFFLE: "Shuffle",
+    CardEnum.SKIP: "Skip",
+    CardEnum.SEE_THE_FUTURE: "See the Future",
+    CardEnum.BEARD: "Beard Cat",
+    CardEnum.CATERMELON: "Catermelon",
+    CardEnum.POTATO: "Hairy Potato Cat",
+    CardEnum.RAINBOW: "Rainbow Ralphing Cat",
+    CardEnum.TACO: "Tacocat",
+}
