@@ -55,10 +55,10 @@ class Hand:
         Returns:
             None
         """
-        if not self.cards[card]:
-            self.cards[card] = quantity
-        else:
+        if card in self.cards:
             self.cards[card] += quantity
+        else:
+            self.cards[card] = quantity
 
     def remove_card(self, card: CardEnum, quantity: int = 1):
         """
@@ -105,18 +105,20 @@ class Hand:
         Returns:
             dict[ActionEnum, int]: Dictionary with <Action, count> pairs
         """
-        possible_actions = {}
+        possible_actions: dict[ActionEnum, int] = {}
 
         for cardType in CardEnum:
             # Check for card specific actions
-            count = self.cards[cardType]
+            count = 0
+            if cardType in self.cards:   
+                count = self.cards[cardType]
 
             match cardType:
-                case CardEnum.DEFUSE | CardEnum.NOPE | CardEnum.ATTACK | CardEnum.FAVOR | CardEnum.SHUFFLE | CardEnum.SKIP | CardEnum.SEE_THE_FUTURE:
+                case CardEnum.ATTACK | CardEnum.FAVOR | CardEnum.SHUFFLE | CardEnum.SKIP | CardEnum.SEE_THE_FUTURE:
                     possible_actions[card_action_mapping[cardType]] = count
 
                 case CardEnum.BEARD | CardEnum.CATERMELON | CardEnum.POTATO | CardEnum.RAINBOW | CardEnum.TACO:
-                    if possible_actions[ActionEnum.TWO_CAT]:
+                    if ActionEnum.TWO_CAT in possible_actions:
                         possible_actions[ActionEnum.TWO_CAT] += count // 2
                     else:
                         possible_actions[ActionEnum.TWO_CAT] = count // 2
@@ -154,7 +156,7 @@ class Hand:
         """
 
         # Sanity check for valid action
-        if not self.get_possible_actions()[action]:
+        if not action in self.get_possible_actions():
             raise ValueError("Invalid action number!")
         
         # Check if player steals a card, only case where multiple cards are removed from hand from 1 action

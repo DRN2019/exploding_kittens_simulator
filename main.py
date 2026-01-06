@@ -1,10 +1,12 @@
 import random
-from .utils.deck import Deck
-from .utils.hand import Hand
-from .utils.card import CardEnum
-from .utils.actions import ActionEnum, print_all_user_actions, perform_action
-from .utils.util import clear_screen
+from utils.deck import Deck
+from utils.hand import Hand
+from utils.card import CardEnum
+from utils.actions import ActionEnum, print_all_user_actions
+from utils.user_actions import perform_action
+from utils.util import clear_screen
 from typing import List
+import utils.constants as const
 
 
 def main():
@@ -40,29 +42,37 @@ def main():
     """
 
     # Initialization step
-    n_players = int(input("How many players? "))
     seed = int(input("Random seed: "))
+
+    while True:
+        n_players = int(input("How many players? "))
+
+        if n_players < 2 or n_players > 5:
+            print("Please enter a number between 2 and 5!")
+        else:
+            break
+    
 
     
     # Initialize deck and deal initial hands
     random.seed(seed)
     deck: Deck = Deck()
-    players: List[Hand] = [Hand()] * n_players
+    players: List[Hand] = [Hand(cards={}, alive=True) for i in range(n_players)]
     aliveCt = n_players
 
-    for i in range(n_players):
+    for player in players:
         # Initial defuse + 7 cards
-        players[i].add_card(CardEnum.DEFUSE)
+        player.add_card(CardEnum.DEFUSE)
 
         for j in range(7):
-            players[i].add_card(deck.draw_card())
+            player.add_card(deck.draw_card())
         
     # Add exploding kittens and spare defuses to finish initialization
     deck.add_defuse_and_kittens(n_players)
 
     # Turn based gameplay
     curPlayer = 0
-    isAttacked = False
+    turnModifiers = { "isAttacking": False, "isAttacked": False, "skipTurn": False}
     while aliveCt > 1:
         # Check if current player is still in the game
         if not players[curPlayer].is_alive():
@@ -71,23 +81,19 @@ def main():
 
         print(f"Player {curPlayer + 1}'s turn:")
 
-        skipTurn = False
+        turnModifiers["skipTurn"] = False
         while True:
-            action = input("""What would you like to do?
-                           1. See your hand
-                           2. Play a card
-                           3. End turn
-                           """).strip()
+            action = input(const.action_str).strip()
             
-
             match action:
                 case "1":
+                    print(f"Player {curPlayer + 1} -- Your hand:")
                     print(players[curPlayer].get_cards_str())
 
                 case "2":
-                    print("Here are your available actions:")
+                    print(f"Player {curPlayer + 1} -- Here are your available actions:")
                     print(players[curPlayer].get_possible_actions_str())
-                    print("Which action would you like to do?")
+                    print(f"Which action would you like to do?")
                     print("0. Exit")
                     print_all_user_actions()
 
@@ -104,11 +110,8 @@ def main():
                             # Perform action if available
                             if players[curPlayer].get_possible_actions()[action_enum]:
                                 players[curPlayer].play_action(action_enum)
-                                perform_action(action_enum, players, curPlayer, skipTurn, isAttacked, deck)
-
-                                # Check if action ends turn
-                                if skipTurn:
-                                    break
+                                perform_action(action_enum, players, curPlayer, turnModifiers, deck)
+                                break
                                 
                             else:
                                 raise ValueError("If statement")
@@ -125,12 +128,13 @@ def main():
                     print("Please input a valid action")
                     continue
 
-            break
+            if turnModifiers["skipTurn"]:
+                break
 
         # Check if user played a card that skipped their turn
-        if skipTurn:
-            if isAttacked:
-                isAttacked = False
+        if turnModifiers["skipTurn"]:
+            if turnModifiers["isAttacked"]:
+                turnModifiers["isAttacked"] = False
                 continue
             curPlayer = (curPlayer + 1) % n_players
             continue
@@ -154,9 +158,9 @@ def main():
                     pos = int(input(f"Invalid input. Please try again (1 = top, {deck.get_deck_size() + 1} = bottom): "))
                     deck.insert_card(CardEnum.EXPLODING_KITTEN, pos)
 
-                # Go to the next player
-                if isAttacked:
-                    isAttacked = False
+                # Go to the next turn
+                if turnModifiers["isAttacked"]:
+                    turnModifiers["isAttacked"] = False
                     continue
                 curPlayer = (curPlayer + 1) % n_players
                 continue
@@ -173,8 +177,8 @@ def main():
         players[curPlayer].add_card(top_card)
 
         # Move to next player if not attacked
-        if isAttacked:
-            isAttacked = False
+        if turnModifiers["isAttacked"]:
+            turnModifiers["isAttacked"] = False
             continue
         curPlayer = (curPlayer + 1) % n_players
 

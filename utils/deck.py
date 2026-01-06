@@ -30,7 +30,7 @@ class Deck:
         for card, count in self.deck.items():
             deck_list.extend([card] * count)
 
-        self.shuffle()
+        random.shuffle(deck_list)
 
         return deck_list
     

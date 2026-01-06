@@ -1,9 +1,9 @@
 import os
 from typing import List
-from deck import Deck
-from hand import Hand
-from card import CardEnum
-from actions import ActionEnum
+from .deck import Deck
+from .hand import Hand
+from .card import CardEnum
+from .actions import ActionEnum
 
 def clear_screen():
     # Check the operating system
