@@ -184,7 +184,7 @@ class Hand:
         Returns:
             bool: True if player has at least one Nope card, False otherwise
         """
-        return self.cards[CardEnum.NOPE] > 0
+        return CardEnum.NOPE in self.cards and self.cards[CardEnum.NOPE] > 0
 
     def can_defuse(self) -> bool:
         """

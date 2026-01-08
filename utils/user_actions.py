@@ -53,7 +53,7 @@ def attack(turnModifiers: dict[str, bool]):
         isAttacked (bool): _description_
     """
     turnModifiers["skipTurn"] = True
-    turnModifiers["isAttacked"] = True
+    turnModifiers["isAttacking"] = True
 
 def steal_card(players: List[Hand], cur_player: int):
     """

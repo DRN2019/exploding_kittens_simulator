@@ -1,8 +1,8 @@
 import random
 from utils.deck import Deck
 from utils.hand import Hand
-from utils.card import CardEnum
-from utils.actions import ActionEnum, print_all_user_actions
+from utils.card import CardEnum, card_names
+from utils.actions import ActionEnum, print_all_user_actions, action_names
 from utils.user_actions import perform_action
 from utils.util import clear_screen
 from typing import List
@@ -33,7 +33,6 @@ def main():
     Finish:
 
 
-    
     Reinforcment Model consideration:
     - Need a JSON import
         - # of players
@@ -82,6 +81,11 @@ def main():
         print(f"Player {curPlayer + 1}'s turn:")
 
         turnModifiers["skipTurn"] = False
+        if turnModifiers["isAttacking"]:
+            print(f"Player {curPlayer + 1} -- You are being attacked!")
+            turnModifiers["isAttacked"] = True
+            turnModifiers["isAttacking"] = False
+
         while True:
             action = input(const.action_str).strip()
             
@@ -109,8 +113,32 @@ def main():
 
                             # Perform action if available
                             if players[curPlayer].get_possible_actions()[action_enum]:
-                                players[curPlayer].play_action(action_enum)
-                                perform_action(action_enum, players, curPlayer, turnModifiers, deck)
+                                print(f"Player {curPlayer + 1} is performing a {action_names[action_enum]}!")
+
+                                # Ask each player if they would like to nope
+                                nope_active = False
+                                for i in range(len(players)):
+                                    if players[i].is_alive() and players[i].can_nope():
+                                        while True:
+                                            nope = input(f"Player {i + 1} -- Would you like to nope? (Y/N)").strip().lower()
+                                            match nope:
+                                                case "y":
+                                                    print(f"Player {i + 1} used a nope!")
+                                                    nope_active = not nope_active
+
+                                                    # Reset player asking to the start
+                                                    i = 0
+                                                    break
+                                                case "n":
+                                                    break
+                                                case _:
+                                                    print(f"Player {i + 1} -- Please input Y or N!")
+
+                                if nope_active:
+                                    print(f"Player {curPlayer + 1} -- Your card was noped!")
+                                else:
+                                    players[curPlayer].play_action(action_enum)
+                                    perform_action(action_enum, players, curPlayer, turnModifiers, deck)
                                 break
                                 
                             else:
@@ -174,6 +202,7 @@ def main():
 
         
         # If regular card drawn, add to player deck
+        print(f"Player {curPlayer + 1} -- You drew a {card_names[top_card]}!")
         players[curPlayer].add_card(top_card)
 
         # Move to next player if not attacked
